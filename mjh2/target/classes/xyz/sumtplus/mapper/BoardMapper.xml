@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  <mapper namespace="xyz.sumtplus.mapper.BoardMapper">
+  
+  	<sql id="cri">
+  		<trim prefix="(" suffix=") AND"  prefixOverrides="OR">
+			<foreach item="type" collection="typeArr"> <!-- criteria의 getTypeArr를 getter로 가져옴 -->
+				<trim prefix="OR">
+					<choose>
+						<when test="type == 'T'.toString()">
+							TITLE LIKE '%' || #{keyword} || '%'
+						</when>
+						<when test="type == 'C'.toString()">
+							CONTENT LIKE '%' || #{keyword} || '%'
+						</when>
+						<when test="type == 'W'.toString()">
+							WRITER LIKE '%' || #{keyword} || '%'
+						</when>
+					</choose>
+				</trim>
+			</foreach>
+		</trim>
+  	</sql>
+  	
+  	<select id="getTotalCount" resultType="int">
+  		<![CDATA[
+  		SELECT count(*)    
+		FROM TBL_BOARD
+		WHERE
+		]]> 
+		<include refid="cri"/>
+		<![CDATA[
+		 BNO > 0
+		 AND CATEGORY = #{category} 
+  		]]> 
+  	</select>
+  	
+  	<select id="getList" resultType="xyz.sumtplus.domain.BoardVO">
+  		<![CDATA[
+  		SELECT
+	    /*+ INDEX_DESC(TBL_BOARD PK_BOARD)*/
+	    	*
+		FROM TBL_BOARD
+		WHERE BNO > 0 
+  		]]> <!-- 꺽쇠등을 일반적인 문자처럼 인식하게함 -->
+  	</select>
+  	
+  	<select id="getListWithPaging" resultType="xyz.sumtplus.domain.BoardVO">
+  		<![CDATA[
+  		WITH TMP AS (
+		    SELECT
+		    /*+ INDEX_DESC(TBL_BOARD PK_BOARD)*/
+		    ROWNUM RN, TBL_BOARD.*
+		    FROM TBL_BOARD
+		    WHERE
+		]]>
+		<include refid="cri"/> 
+		<![CDATA[    
+		    BNO > 0
+		    AND ROWNUM <= #{pageNum} * #{amount}
+		)
+		SELECT BNO, TITLE, CONTENT, WRITER, REGDATE, UPDATEDATE, REPLYCNT FROM TMP
+		WHERE RN > (#{pageNum} - 1) * #{amount}
+  		]]>
+  	</select>
+  	
+  	<select id="getListWithPaging2" resultType="xyz.sumtplus.domain.BoardVO">
+  		<![CDATA[
+  		WITH TMP AS (
+		    SELECT
+		    /*+ INDEX_DESC(TBL_BOARD PK_BOARD)*/
+		    ROWNUM RN, TBL_BOARD.*
+		    FROM TBL_BOARD
+		    WHERE
+		]]>
+		<include refid="cri"/> 
+		<![CDATA[    
+		    BNO > 0
+		    AND CATEGORY = #{category}
+		    AND ROWNUM <= #{pageNum} * #{amount}
+		    START WITH PARENTNO=0
+   			CONNECT BY PRIOR BNO=PARENTNO
+    		ORDER SIBLINGS BY REGROUP DESC, BNO ASC
+		)
+		SELECT BNO, TITLE, CONTENT, WRITER, REGDATE, HITCOUNT, CATEGORY, CLOSE, REPLYCNT, REGROUP, DEPTH, PARENTNO FROM TMP
+		WHERE RN > (#{pageNum} - 1) * #{amount}
+  		]]>
+  	</select>
+  	
+  	<resultMap type="xyz.sumtplus.domain.BoardVO" id="boardMap">
+  		<id property="bno" column="bno"/>
+  		<result property="bno" column="bno"/>
+  		<result property="title" column="title"/>
+  		<result property="content" column="content"/>
+  		<result property="hitcount" column="hitcount"/>
+  		<result property="category" column="category"/>
+  		<collection property="attachList" resultMap="attachMap"/>
+  	</resultMap>
+  	
+  	<resultMap type="xyz.sumtplus.domain.BoardAttachVO" id="attachMap">
+  		<result property="bno" column="bno"/>
+  		<result property="uuid" column="uuid"/>
+  		<result property="uploadPath" column="uploadpath"/>
+  		<result property="fileName" column="filename"/>
+  		<result property="image" column="image"/>
+  	</resultMap>
+  	
+  	<select id="getListGalley" resultMap="boardMap">
+  		<![CDATA[
+  		WITH TMP AS (
+	    SELECT
+	    /*+ INDEX_DESC(TBL_BOARD PK_BOARD)*/
+	    ROWNUM RN, A.BNO BNO, TITLE, CONTENT, HITCOUNT, CATEGORY, UUID, UPLOADPATH, FILENAME, IMAGE
+	    FROM TBL_BOARD A
+	    LEFT OUTER JOIN
+	    TBL_ATTACH B
+	    ON A.BNO = B.BNO
+	    WHERE
+		]]>
+		<include refid="cri"/> 
+		<![CDATA[    
+		    A.BNO > 0
+		    AND CATEGORY = 2
+		    AND ROWNUM <= #{pageNum} * #{amount}
+		)
+		SELECT BNO, TITLE, CONTENT, HITCOUNT, CATEGORY, UUID, UPLOADPATH, FILENAME, IMAGE FROM TMP
+		WHERE RN > (#{pageNum} - 1) * #{amount}
+  		]]>
+  	</select>
+  	
+  	<insert id="insert">
+  		INSERT INTO TBL_BOARD (BNO, TITLE, CONTENT, WRITER)
+		VALUES (SEQ_BOARD.NEXTVAL, #{title}, #{content}, #{writer})
+  	</insert> 
+  	
+  	<insert id="insertSelectKey">
+  		<selectKey keyProperty="bno" order="BEFORE" resultType="long"> <!-- 인서트 전에 BNO를 증가시킴-->
+  			SELECT SEQ_BOARD.NEXTVAL FROM DUAL
+  		</selectKey>
+  		INSERT INTO TBL_BOARD (BNO, TITLE, CONTENT, WRITER, REGROUP)
+		VALUES (#{bno}, #{title}, #{content}, #{writer}, #{bno})
+  	</insert>
+  	
+  	<insert id="insertSelectKeyChild">
+  		<selectKey keyProperty="bno" order="BEFORE" resultType="long"> <!-- 인서트 전에 BNO를 증가시킴-->
+  			SELECT SEQ_BOARD.NEXTVAL FROM DUAL
+  		</selectKey>
+  			INSERT INTO TBL_BOARD (BNO, TITLE, CONTENT, WRITER, PARENTNO, REGROUP, DEPTH)
+  			VALUES (#{bno}, #{title}, #{content}, #{writer}, #{parentno}, #{regroup}, #{depth})
+  	</insert>
+  	
+  	<select id="read" resultType="xyz.sumtplus.domain.BoardVO">
+  		SELECT * FROM TBL_BOARD WHERE BNO = #{bno}
+  	</select>
+  	
+  	<select id="read2" resultType="map">
+  		SELECT * FROM TBL_BOARD WHERE BNO = #{bno}
+  	</select>
+  	
+  	<delete id="delete">
+  		DELETE TBL_BOARD WHERE BNO = #{bno}
+  	</delete>
+  	
+  	<update id="update" >
+  		UPDATE TBL_BOARD SET
+  			TITLE = #{title}
+  			,CONTENT = #{content}
+  			,WRITER = #{writer}
+  			,UPDATEDATE = SYSDATE
+		WHERE BNO = #{bno}  			
+  	</update>
+  </mapper>
+  
+  
+  
+  
+  
+  
+  
+  
+  
