@@ -22,7 +22,9 @@ import xyz.sumtplus.domain.BoardVO;
 import xyz.sumtplus.domain.Criteria;
 import xyz.sumtplus.domain.PageDTO;
 import xyz.sumtplus.service.BoardService;
-
+/**
+ *	게시판을 처리하는 컨트롤러 
+ */
 @Controller
 @Log4j
 @RequestMapping("/board/*")
@@ -30,6 +32,8 @@ public class BoardController {
 	@Autowired
 	private BoardService service;
 	
+	// crieria를 파라미터로 받아서 게시글 목록과 페이징을 모델에 부여
+	// list페이지 요청
 	@GetMapping("list")
 	public void list(Criteria cri, Model model) {
 		log.info("list....");
@@ -37,6 +41,8 @@ public class BoardController {
 		model.addAttribute("pageMaker", new PageDTO(cri, service.getTotal(cri)));
 	}
 	
+	// criteria를 파라미터로 받아서 강의조회게시글 목록과 페이징을 모델에 부여
+	// criteria의 카테고리는 2로 데이터수는 8로 고정하여 courseList페이지 요청
 	@GetMapping("courseList")
 	public void courseList(Criteria cri, Model model) {
 		log.info("courseList......");
@@ -46,32 +52,27 @@ public class BoardController {
 		model.addAttribute("pageMaker", new PageDTO(cri, service.getTotal(cri)));
 	}
 	
-	//@PreAuthorize("isAuthenticated()")
-	@GetMapping({"get","modify","get2"})
+	// bno와 criteria를 파라미터로 받아서 bno에 해당하는 게시글과 criteria를 모델에 부여
+	// get또는 modify페이지 요청
+	@GetMapping({"get","modify"})
 	public void get(@RequestParam Long bno, @ModelAttribute("cri") Criteria cri, Model model) {
 		log.info("get or modify....");
 		model.addAttribute("board",service.get(bno));
 		model.addAttribute("cri",cri);
 	}
 	
-//	@GetMapping("get2")
-//	public void get2() {
-//		log.info("get2....");
-//	}
-	/*
-	@GetMapping("register")
-	public void register() {
-		log.info("register....");
-		
-	}
-	*/
+	// bno(기본값 0)를 파라미터로 받아서 조건에 맞게 모델에 부여
+	// register페이지 요청
+	// 인증된 사용자만 접근가능
 	@PreAuthorize("isAuthenticated()")
 	@GetMapping("register")
 	public void register(@RequestParam(defaultValue="0") Long bno, Model model) {
+		// bno가 0일때 게시글등록, bno에 해당하는 boardVO객체를 모델에 부여
 		if(bno == 0) {
 			log.info("register.......");
 			log.info("boardVO : " + service.get(bno));
 		}
+		// bno가 0이 아닐때 답글등록, bno에 해당하는 boardVO객체와 regroup을 모델에 부여
 		else {
 			log.info("answer....");
 			log.info("regroup : " + service.get(bno).getRegroup());
@@ -79,59 +80,57 @@ public class BoardController {
 		}
 	}
 	
+	// register에서 post로 데이터를 받았을때 처리
+	// boardVO를 파라미터로 받아서 게시글 등록
+	// 인증된 사용자만 접근가능
 	@PreAuthorize("isAuthenticated()")
 	@PostMapping("register")
 	public String register(BoardVO boardVO, RedirectAttributes rttr) {
 		log.info("register....");
 		log.info(boardVO);
-		//boardVO.getAttachList().forEach(log::info);
 		service.registerChild(boardVO);
-		rttr.addFlashAttribute("result", boardVO.getBno()); // 1회성사용
-		
+		// 1회성사용, 새로 등록한 게시글 번호를 전달
+		rttr.addFlashAttribute("result", boardVO.getBno());
+		// list로 리다이렉트
 		return "redirect:/board/list";
 	}
 	
-	/*
-	@PostMapping("registerChild")
-	public String registerChild(BoardVO boardVO, RedirectAttributes rttr) {
-		log.info("register....");
-		log.info(boardVO);
-		//boardVO.getAttachList().forEach(log::info);
-		service.register(boardVO);
-		rttr.addFlashAttribute("result", boardVO.getBno()); // 1회성사용
-		
-		return "redirect:/board/list";
-	}
-	*/
+	// modify에서 post로 데이터를 받았을때 처리
+	// boardVO와 criteria를 파라미터로 받아서 게시글 수정
+	// 로그인한 사용자의 아이디와 게시글의 작성자가 같아야 접근가능
 	@PreAuthorize("principal.username == #boardVO.writer")
 	@PostMapping("modify")
 	public String modify(BoardVO boardVO, @ModelAttribute("cri") Criteria cri, RedirectAttributes rttr) {
 		log.info("modify....");
 		log.info(boardVO);
 		boardVO.getAttachList().forEach(log::info);
+		// 수정 성공시 success를 반환
 		if(service.modify(boardVO)) {
 			rttr.addFlashAttribute("result", "success");
 		};
-//		rttr.addAttribute("pageNum",cri.getPageNum()); //리다이렉트 어트리뷰트는 포워드를 통해서값을 담는 것이 아님
-//		rttr.addAttribute("amount",cri.getAmount());
+		// 페이징된 list로 리다이렉트
 		return "redirect:/board/list" + cri.getListLink();
 	}
+	
+	// remove에서 post로 데이터를 받았을때 처리
+	// bno와 writer와 criteria를 파라미터로 받아서 게시글 삭제
+	// 로그인한 사용자의 아이디와 게시글의 작성자가 같아야 접근가능
 	@PreAuthorize("principal.username == #writer")
 	@PostMapping("remove")
 	public String remove(String writer, @RequestParam Long bno, @ModelAttribute("cri") Criteria cri, RedirectAttributes rttr) { //기본데이터 타입은 @requestparam을 써주는 것이 좋음
 		log.info("remove....");
-		
+		// bno로 첨부파일의 목록을 가져옴
 		List<BoardAttachVO> list = service.getAttachList(bno);
-		
+		// 삭제 성공시 첨부파일을 제거, success을 반환
 		if(service.remove(bno)) {
 			deleteFiles(list);
 			rttr.addFlashAttribute("result", "success");
 		};
-//		rttr.addAttribute("pageNum",cri.getPageNum()); 
-//		rttr.addAttribute("amount",cri.getAmount());
+		// 페이징된 list로 리다이렉트
 		return "redirect:/board/list" + cri.getListLink();
 	}
 	
+	// bno를 파라미터로 받아서 첨부파일의 목록을 반환
 	@ResponseBody
 	@GetMapping("getAttachList")
 	public List<BoardAttachVO> getAttachList(Long bno) {
@@ -140,10 +139,11 @@ public class BoardController {
 		
 	}
 	
+	// 첨부파일을 삭제하는 메서드
 	private void deleteFiles(List<BoardAttachVO> attachList) {
 		log.info("deleteFiles............");
 		log.info(attachList);
-		
+		// 이미지일 경우 썸네일도 같이 삭제
 		attachList.forEach(attach-> {
 			new File(UploadController.UPLOAD_PATH, attach.getDownPath()).delete();
 			if(attach.isImage()) {

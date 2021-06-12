@@ -9,22 +9,25 @@ import org.springframework.stereotype.Component;
 
 import lombok.Data;
 
+/**
+ *  TBL_BOARD의 레코드에 대응되는 자바 클래스
+ */
 @Data
 public class BoardVO {
-	private Long bno;
-	private String title;
-	private String content;
-	private String writer;
-	private Date regdate;
-	private Date updateDate;
-	private boolean close;
-	private Long hitcount;
-	private Integer category;
-	private Long regroup;
-	private Long depth;
-	private Long parentno;
-	
-	private int replyCnt;
-	private List<BoardAttachVO> attachList = new ArrayList<BoardAttachVO>();
+	private Long bno; //글번호
+	private String title; //제목
+	private String content; //내용
+	private String writer; //작성자
+	private Date regdate; //작성일
+	private Date updateDate; //수정일
+	private boolean close; //비공개여부
+	private Long hitcount; //조회수
+	private Integer category; //게시판번호
+	private Long regroup; //조상글번호
+	private Long depth; //댓글깊이
+	private Long parentno; //부모글번호
+
+	private int replyCnt; //댓글수
+	private List<BoardAttachVO> attachList = new ArrayList<BoardAttachVO>(); //첨부파일목록
 	
 }

@@ -5,7 +5,10 @@ import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-
+/**
+ *	댓글 페이징처리를 위한 클래스
+ *	PageDTO를 상속 
+ */
 @Getter
 @Setter
 @ToString
