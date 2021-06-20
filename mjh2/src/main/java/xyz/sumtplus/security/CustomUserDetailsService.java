@@ -12,7 +12,9 @@ import lombok.extern.log4j.Log4j;
 import xyz.sumtplus.domain.MemberVO;
 import xyz.sumtplus.mapper.MemberMapper;
 import xyz.sumtplus.security.domain.CustomUser;
-
+/**
+ * 로그인시에 CustomUser를 반환하기 위한 클래스
+ */
 @Log4j
 @Data
 public class CustomUserDetailsService implements UserDetailsService{

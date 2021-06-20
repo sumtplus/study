@@ -3,15 +3,17 @@
   PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="xyz.sumtplus.mapper.BoardAttachMapper">
+	<!-- 첨부파일 등록 -->
   	<insert id="insert">
   		INSERT INTO TBL_ATTACH (UUID, UPLOADPATH, FILENAME, IMAGE, BNO)
 		VALUES (#{uuid}, #{uploadPath}, #{fileName}, #{image}, #{bno})
   	</insert> 
   	
+  	<!-- 첨부파일 목록 -->
   	<select id="findBy" resultType="xyz.sumtplus.domain.BoardAttachVO">
   		SELECT * FROM TBL_ATTACH WHERE BNO = #{bno}
   	</select>
-  	
+  	<!-- 첨부파일 삭제 -->
   	<delete id="delete">
   		DELETE TBL_ATTACH WHERE UUID = #{uuid}
   	</delete>

@@ -4,9 +4,10 @@
   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
   <mapper namespace="xyz.sumtplus.mapper.BoardMapper">
   
+  <!-- 검색 -->
   	<sql id="cri">
   		<trim prefix="(" suffix=") AND"  prefixOverrides="OR">
-			<foreach item="type" collection="typeArr"> <!-- criteria의 getTypeArr를 getter로 가져옴 -->
+			<foreach item="type" collection="typeArr"> 
 				<trim prefix="OR">
 					<choose>
 						<when test="type == 'T'.toString()">
@@ -24,6 +25,7 @@
 		</trim>
   	</sql>
   	
+  	<!-- 총게시글 수 -->
   	<select id="getTotalCount" resultType="int">
   		<![CDATA[
   		SELECT count(*)    
@@ -37,6 +39,7 @@
   		]]> 
   	</select>
   	
+  	<!-- 게시글 목록 -->
   	<select id="getList" resultType="xyz.sumtplus.domain.BoardVO">
   		<![CDATA[
   		SELECT
@@ -44,9 +47,10 @@
 	    	*
 		FROM TBL_BOARD
 		WHERE BNO > 0 
-  		]]> <!-- 꺽쇠등을 일반적인 문자처럼 인식하게함 -->
+  		]]> 
   	</select>
   	
+  	<!-- 페이징/검색처리된 게시글 목록 -->
   	<select id="getListWithPaging" resultType="xyz.sumtplus.domain.BoardVO">
   		<![CDATA[
   		WITH TMP AS (
@@ -66,6 +70,7 @@
   		]]>
   	</select>
   	
+  	<!-- 페이징/검색처리및 계층형쿼리 게시글 목록 -->
   	<select id="getListWithPaging2" resultType="xyz.sumtplus.domain.BoardVO">
   		<![CDATA[
   		WITH TMP AS (
@@ -106,7 +111,7 @@
   		<result property="fileName" column="filename"/>
   		<result property="image" column="image"/>
   	</resultMap>
-  	
+  	<!-- 첨부파일과 카테고리2인 게시글을 조인해서 가져옴 -->
   	<select id="getListGalley" resultMap="boardMap">
   		<![CDATA[
   		WITH TMP AS (
@@ -129,28 +134,28 @@
 		WHERE RN > (#{pageNum} - 1) * #{amount}
   		]]>
   	</select>
-  	
+  	<!-- 게시글 등록 -->
   	<insert id="insert">
   		INSERT INTO TBL_BOARD (BNO, TITLE, CONTENT, WRITER)
 		VALUES (SEQ_BOARD.NEXTVAL, #{title}, #{content}, #{writer})
   	</insert> 
-  	
+  	<!-- PK값을 미리 처리하고 게시글 등록 -->
   	<insert id="insertSelectKey">
-  		<selectKey keyProperty="bno" order="BEFORE" resultType="long"> <!-- 인서트 전에 BNO를 증가시킴-->
+  		<selectKey keyProperty="bno" order="BEFORE" resultType="long"> 
   			SELECT SEQ_BOARD.NEXTVAL FROM DUAL
   		</selectKey>
   		INSERT INTO TBL_BOARD (BNO, TITLE, CONTENT, WRITER, REGROUP)
 		VALUES (#{bno}, #{title}, #{content}, #{writer}, #{bno})
   	</insert>
-  	
+  	<!-- PK값을 미리 처리하고 게시글 등록(답글컬럼 포함) -->
   	<insert id="insertSelectKeyChild">
-  		<selectKey keyProperty="bno" order="BEFORE" resultType="long"> <!-- 인서트 전에 BNO를 증가시킴-->
+  		<selectKey keyProperty="bno" order="BEFORE" resultType="long">
   			SELECT SEQ_BOARD.NEXTVAL FROM DUAL
   		</selectKey>
   			INSERT INTO TBL_BOARD (BNO, TITLE, CONTENT, WRITER, PARENTNO, REGROUP, DEPTH)
   			VALUES (#{bno}, #{title}, #{content}, #{writer}, #{parentno}, #{regroup}, #{depth})
   	</insert>
-  	
+  	<!-- 게시글 단일조회 -->
   	<select id="read" resultType="xyz.sumtplus.domain.BoardVO">
   		SELECT * FROM TBL_BOARD WHERE BNO = #{bno}
   	</select>
@@ -158,11 +163,11 @@
   	<select id="read2" resultType="map">
   		SELECT * FROM TBL_BOARD WHERE BNO = #{bno}
   	</select>
-  	
+  	<!-- 게시글 삭제 -->
   	<delete id="delete">
   		DELETE TBL_BOARD WHERE BNO = #{bno}
   	</delete>
-  	
+  	<!-- 게시글 수정 -->
   	<update id="update" >
   		UPDATE TBL_BOARD SET
   			TITLE = #{title}

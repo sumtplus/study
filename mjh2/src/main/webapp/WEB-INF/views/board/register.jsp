@@ -117,7 +117,6 @@
 				for(var i in files) {
 					if(!checkExtension(files[i].name, files[i].size)) {
 							
-						//$("input[name='files']").val("");
 						return false;			
 					}
 					formData.append("files", files[i]);
@@ -135,11 +134,9 @@
 					processData : false,
 					contentType : false, //contentType을 알아서보냄
 					success : function(result) { //result는 jsp에 대한 요청정보
-					//complete : function(result) {
 						console.log(result);
 						showUploadedFile(result);
 						$(".uploadDiv").html(cloneObj.html());
-						//$("input[name='files']").val("");
 					}
 				});
 			})
@@ -167,12 +164,9 @@
 					str += "' data-uploadpath='" + obj.uploadPath;
 					str += "' >";
 					if(!obj.image) {
-						//var fileCallPath = encodeURIComponent(obj.uploadPath + "/" + obj.uuid + "_" + obj.fileName); 	
 						str += "<a href='${pageContext.request.contextPath}/download?fileName=" + obj.downPath + "'><i class='fas fa-paperclip text-muted'></i>" + obj.fileName + "</a>";
-	//					str += "<li class='list-group-item'><i class='fas fa-paperclip text-muted'></i>" + uploadResultArr[i].fileName + "</li>";
 					}
 					else {
-						//var fileCallPath = encodeURIComponent(obj.uploadPath + "/s_" + obj.uuid + "_" + obj.fileName); 
 						str += "<a href='javascript:showImage(\"" +  obj.downPath+ "\")'>";
 						str += "<img src='${pageContext.request.contextPath}/display?fileName=" + obj.thumbPath + "'></a>";
 					}
@@ -183,7 +177,6 @@
 			}
 			function showImage(path) {
 				$("#imageModal img").attr("src", "${pageContext.request.contextPath}/display?fileName="+path);
-				//alert(path);
 				$("#imageModal").modal("show");
 			}
 			$(".uploadResult").on("click", ".removeFileBtn", function() {
@@ -201,9 +194,6 @@
 					url : "${pageContext.request.contextPath}/deleteFile",
 					type : "post",
 					data : JSON.stringify(data),
-					/* beforeSend : function(xhr) {
-						xhr.setRequestHeader(csrf, csrfToken)
-					}, */
 					contentType : "application/json; charset=utf-8",
 					success : function(result) {
 						alert(result);
@@ -217,7 +207,7 @@
 				event.preventDefault();
 				var str = "";
 				var attrs = ["fileName", "uuid", "uploadPath", "image"];
-				$(".uploadResult li").each(function(i, it) { //i는 인덱스 it는 아이템
+				$(".uploadResult li").each(function(i, it) { 
 					for(var j in attrs) {
 						var tmp = '<input type="hidden" name="attachList[' + i + '].';
 						tmp += attrs[j] + '" value="' + $(it).data(attrs[j].toLowerCase()) + '">';
@@ -227,8 +217,6 @@
 				});
 				console.log(str);
 				$(this).closest("form").append(str).submit();
-				//$(this).closest("form").append(str);
-				//console.log($(this).closest("form").serialize());
 				
 			})
 		</script>

@@ -9,10 +9,11 @@ import org.apache.ibatis.annotations.Update;
 
 import xyz.sumtplus.domain.BoardVO;
 import xyz.sumtplus.domain.Criteria;
-
+/**
+ * 게시판매퍼 인터페이스
+ */
 public interface BoardMapper {
 	
-//	@Select("SELECT * FROM TBL_BOARD WHERE BNO > 0")
 	public List<BoardVO> getList();
 	
 	public List<BoardVO> getListWithPaging(Criteria cri);
@@ -35,6 +36,7 @@ public interface BoardMapper {
 	
 	public int getTotalCount(Criteria cri);
 	
+	// 댓글 수 증가
 	@Update("UPDATE TBL_BOARD SET REPLYCNT = REPLYCNT + #{amount} WHERE BNO = #{bno}")
 	void updateReplyCnt(@Param("bno") Long bno, @Param("amount") int amount);
 	

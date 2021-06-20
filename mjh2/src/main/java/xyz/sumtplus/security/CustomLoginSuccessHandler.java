@@ -13,7 +13,9 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.stereotype.Component;
 
 import lombok.extern.log4j.Log4j;
-
+/**
+ * 로그인 성공이후에 처리하기 위한 클래스
+ */
 @Log4j
 @Component
 public class CustomLoginSuccessHandler implements AuthenticationSuccessHandler{

@@ -1,13 +1,14 @@
 /**
- *  reply module
+ *  자바스크립트 댓글 모듈
  */
 console.log("reply module...");
 
 var replyService = (function() {
 	return {
+		//ajax 댓글등록
 		add: function(reply, callback, error) {
 			console.log("reply.add()........");
-			//ajax호출
+			
 			$.ajax({
 				type : "post",
 				url : reply.cp+"/replies/new",
@@ -26,6 +27,7 @@ var replyService = (function() {
 			});
 			
 		},
+		//ajax 댓글목록조회
 		getList: function(param, callback, error) {
 			var bno = param.bno;
 			var rnoStr = param.rno ? + param.rno : "";
@@ -42,6 +44,7 @@ var replyService = (function() {
 				}
 			});
 		},
+		// ajax 댓글 삭제
 		remove: function(reply, callback, error) {
 			var url = reply.cp+"/replies/" + reply.rno + "/" + reply.replyer;
 			$.ajax({
@@ -59,6 +62,7 @@ var replyService = (function() {
 				}
 			})
 		},
+		//ajax 댓글 수정
 		update: function(reply, callback, error) {
 			var url = reply.cp+"/replies/" + reply.rno;
 			$.ajax({
@@ -78,6 +82,7 @@ var replyService = (function() {
 				}
 			});
 		},
+		//ajax 댓글 상세조회
 		get: function(reply, callback, error) {
 			var rno = reply.rno;
 			var url = reply.cp+"/replies/" + rno;
@@ -91,18 +96,12 @@ var replyService = (function() {
 				}
 			});
 		},
+		// 지난시간
 		displayTime: function(timeValue) {
 			return moment(timeValue).fromNow();
 		},
 		getReplyDOM: function(param) {
 			var str="";
-//			str += '<li class="list-group-item" data-rno="' + param.rno + '">';
-//			str += '	<div class="header">';
-//			str += '   	<strong>' + param.replyer + '</strong>';
-//			str += '    	<small class="float-right">' + this.displayTime(param.replyDate) +'</small>';
-//			str += '	</div>';
-//			str += '	<p class="mt-2">' + param.reply + '</p>';
-//			str += '</li>';
 			str += '<li class="comment-list" data-rno="' + list[i].rno + '">';
 			str += '<div class="single-comment justify-content-between d-flex">';
 			str += '<div class="user justify-content-between d-flex">';

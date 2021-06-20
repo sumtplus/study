@@ -20,7 +20,7 @@
   		<result property="userid" column="userid"/>
   		<result property="auth" column="auth"/>
   	</resultMap>
-  	
+  	<!-- 회원테이블과 권한테이블을 조인해서 가져옴 -->
   	<select id="read" resultMap="memberMap">
   		SELECT MEM.USERID, USERPW, USERNAME, REGDATE, EMAIL, TEL, BIRTHDATE, AUTH FROM
 		TBL_MEMBER MEM
@@ -29,31 +29,29 @@
 		ON MEM.USERID = AUTH.USERID
 		WHERE MEM.USERID = #{userid}
   	</select>
-  	
+  	<!-- 아이디, 비밀번호 조회 -->
   	<select id="get" resultMap="memberMap">
   		SELECT USERID, USERPW FROM TBL_MEMBER WHERE USERID = #{userid}
   	</select>
-  	
+  	<!-- 회원등록 -->
   	<insert id="insert">
   		INSERT INTO TBL_MEMBER(USERID, USERPW, USERNAME, EMAIL, TEL, BIRTHDATE) 
-  		<!-- VALUES (#{userid} , #{userpw} , #{userName} ,#{email} , #{tel}, #{birthDate}) -->
   		VALUES (#{userid} , #{userpw} , #{userName} ,#{email} , #{tel}, TO_DATE(#{birthDate},'YYMMDD'))
   	</insert>
-  	
+  	<!-- 권한등록 -->
   	<insert id="insertAuth">
   		INSERT INTO TBL_MEMBER_AUTH(USERID, AUTH) 
   		VALUES (#{userid} , #{auth})
   	</insert>
-  	
+  	<!-- 회원수정 -->
   	<update id="update">
   		UPDATE TBL_MEMBER SET
 		    USERNAME= #{userName}
 		    ,EMAIL= #{email}
 		    ,TEL= #{tel}
-		    <!-- ,USERPW= #{userpw} -->
 		WHERE USERID = #{userid}
   	</update>
-  	
+  	<!-- 회원삭제 -->
   	<delete id="delete">
   		DELETE TBL_MEMBER WHERE USERID = #{userid}
   	</delete>

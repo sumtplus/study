@@ -5,7 +5,9 @@ import java.util.List;
 import xyz.sumtplus.domain.Criteria;
 import xyz.sumtplus.domain.ReplyPageDTO;
 import xyz.sumtplus.domain.ReplyVO;
-
+/**
+ * 댓글서비스 인터페이스
+ */
 public interface ReplyService {
 	int register(ReplyVO vo);
 	

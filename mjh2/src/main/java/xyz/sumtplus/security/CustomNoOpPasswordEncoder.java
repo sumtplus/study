@@ -3,7 +3,9 @@ package xyz.sumtplus.security;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import lombok.extern.log4j.Log4j;
-
+/**
+ * 별도의 PasswordEncoder를 사용하지 않기 위한 클래스
+ */
 @Log4j
 public class CustomNoOpPasswordEncoder implements PasswordEncoder{
 

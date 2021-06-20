@@ -9,14 +9,11 @@
 	<bean class="xyz.sumtplus.security.CustomLoginSuccessHandler" id="customLoginSuccess"></bean>
 	<bean class="xyz.sumtplus.security.CustomUserDetailsService" id="userDetailsService"></bean>
 	<security:http>
-		<!-- <security:intercept-url pattern="/sample/all" access="permitAll"/>
-		<security:intercept-url pattern="/sample/member" access="hasRole('ROLE_MEMBER')"/>
-		<security:intercept-url pattern="/sample/admin" access="hasRole('ROLE_ADMIN')"/> -->
 		<security:form-login login-page="/customLogin" />
 		<security:access-denied-handler ref="accessDeniedHandler"/>
 		<security:logout logout-url="/customLogout" delete-cookies="JSESSIONID,remember-me" logout-success-url="/" />
 		<security:remember-me data-source-ref="dataSource" token-validity-seconds="604800"/>
-		<!-- <security:csrf disabled="true"/> -->
+		<security:csrf disabled="true"/>
 	</security:http>
 	<security:authentication-manager>
 		<security:authentication-provider user-service-ref="userDetailsService">

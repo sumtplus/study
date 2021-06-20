@@ -15,27 +15,26 @@
 	
 	<task:annotation-driven/>
 	<!-- Root Context: defines shared resources visible to all other web components -->
-	<mybatis-spring:scan base-package="xyz.sumtplus.mapper"/> <!-- BoardMapper 인터페이스를 mybatis가 자동으로 구현 -->
+	<mybatis-spring:scan base-package="xyz.sumtplus.mapper"/> 
 	<context:component-scan base-package="xyz.sumtplus.domain"/>
 	<context:component-scan base-package="xyz.sumtplus.service"/>
 	<context:component-scan base-package="xyz.sumtplus.security"/>
 	<context:component-scan base-package="xyz.sumtplus.aop"/>
 	<tx:annotation-driven/>
 	<aop:aspectj-autoproxy/>
-	<!-- <context:component-scan base-package="xyz.sumtplus"/> -->
 	
 	<bean class="com.zaxxer.hikari.HikariConfig" id="hikariConfig">
 		<property name="driverClassName">
 			<value>net.sf.log4jdbc.sql.jdbcapi.DriverSpy</value>
 		</property>
 		<property name="jdbcUrl">
-			<value>jdbc:log4jdbc:oracle:thin:@human.lepelaka.net:1521:orcl</value>
+			<value>jdbc:log4jdbc:oracle:thin:@222.118.64.239:1521:xe</value>
 		</property>
 		<property name="username">
-			<value>BOOK_EX09</value>
+			<value>MINSCHOOL</value>
 		</property>
 		<property name="password">
-			<value>BOOK_EX09</value>
+			<value>1234</value>
 		</property>
 	</bean>
 	<bean class="com.zaxxer.hikari.HikariDataSource" id="dataSource" destroy-method="close">

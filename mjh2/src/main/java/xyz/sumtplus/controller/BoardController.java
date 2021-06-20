@@ -63,7 +63,6 @@ public class BoardController {
 	
 	// bno(기본값 0)를 파라미터로 받아서 조건에 맞게 모델에 부여
 	// register페이지 요청
-	// 인증된 사용자만 접근가능
 	@PreAuthorize("isAuthenticated()")
 	@GetMapping("register")
 	public void register(@RequestParam(defaultValue="0") Long bno, Model model) {
@@ -82,7 +81,6 @@ public class BoardController {
 	
 	// register에서 post로 데이터를 받았을때 처리
 	// boardVO를 파라미터로 받아서 게시글 등록
-	// 인증된 사용자만 접근가능
 	@PreAuthorize("isAuthenticated()")
 	@PostMapping("register")
 	public String register(BoardVO boardVO, RedirectAttributes rttr) {
@@ -97,7 +95,6 @@ public class BoardController {
 	
 	// modify에서 post로 데이터를 받았을때 처리
 	// boardVO와 criteria를 파라미터로 받아서 게시글 수정
-	// 로그인한 사용자의 아이디와 게시글의 작성자가 같아야 접근가능
 	@PreAuthorize("principal.username == #boardVO.writer")
 	@PostMapping("modify")
 	public String modify(BoardVO boardVO, @ModelAttribute("cri") Criteria cri, RedirectAttributes rttr) {
@@ -114,7 +111,6 @@ public class BoardController {
 	
 	// remove에서 post로 데이터를 받았을때 처리
 	// bno와 writer와 criteria를 파라미터로 받아서 게시글 삭제
-	// 로그인한 사용자의 아이디와 게시글의 작성자가 같아야 접근가능
 	@PreAuthorize("principal.username == #writer")
 	@PostMapping("remove")
 	public String remove(String writer, @RequestParam Long bno, @ModelAttribute("cri") Criteria cri, RedirectAttributes rttr) { //기본데이터 타입은 @requestparam을 써주는 것이 좋음

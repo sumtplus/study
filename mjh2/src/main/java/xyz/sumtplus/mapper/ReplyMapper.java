@@ -7,7 +7,9 @@ import org.apache.ibatis.annotations.Param;
 
 import xyz.sumtplus.domain.Criteria;
 import xyz.sumtplus.domain.ReplyVO;
-
+/**
+ * 댓글매퍼 인터페이스
+ */
 public interface ReplyMapper {
 
 	int insert(ReplyVO vo);
@@ -21,7 +23,6 @@ public interface ReplyMapper {
 	int delete(Long rno);
 	
 	List<ReplyVO> getListWithPaging(@Param("cri") Criteria cri, @Param("bno") Long bno);
-	// @param은 mybatis의 어노테이션
 	
 	List<Map<String, Object>> getListWithPaging2(@Param("cri") Criteria cri, @Param("bno") Long bno);
 	

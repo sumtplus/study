@@ -15,15 +15,19 @@ import lombok.extern.log4j.Log4j;
 import xyz.sumtplus.controller.UploadController;
 import xyz.sumtplus.domain.BoardAttachVO;
 import xyz.sumtplus.mapper.BoardAttachMapper;
-
+/**
+ * 잘못 업로드된 파일을 정리하기 위한 클래스
+ */
 @Component
 @Log4j
 public class FileCheckTask {
 	@Autowired
 	private BoardAttachMapper mapper;
 	
-	// 9시 30분 0초에 하겠다
-	@Scheduled(cron="0 30 9 * * *") //모든 시간의 0초에 하겠다
+	/**
+	 * 어제 첨부파일의 목록 중에서 데이터베이스에 없는 파일을 찾아낸 뒤 해당 파일을 삭제함
+	 */
+	@Scheduled(cron="0 30 9 * * *") // 9시 30분 0초에 하겠다
 	public void checkFiles() {
 		log.warn("file check task run ............");
 		log.warn("==============================================");
@@ -32,14 +36,7 @@ public class FileCheckTask {
 		if(fileList.size() == 0) return;
 		
 		log.warn("=================================");
-		// action 이름 consumer 파라미터 한개, 리턴없음
 		fileList.forEach(log::warn);
-		//fileList.forEach(vo -> log.info(vo));
-//		for(BoardAttachVO vo : fileList) {
-//			log.info(vo);
-//		}
-		// map 지정 || function 한개의 입력, 하나의 리턴 || stream 순번이 있는 스트림화
-		// path의 리스트, 파일타입의 리스트를 가져옴
 		List<Path> fileListPaths = fileList.stream().map(vo -> Paths.get(UploadController.UPLOAD_PATH, vo.getDownPath())).collect(Collectors.toList());
 		fileList.stream().filter(vo-> vo.isImage()).map(vo -> Paths.get(UploadController.UPLOAD_PATH, vo.getThumbPath())).forEach(fileListPaths::add);
 		log.warn("=================================");

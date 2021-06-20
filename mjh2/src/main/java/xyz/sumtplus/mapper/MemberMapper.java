@@ -2,7 +2,9 @@ package xyz.sumtplus.mapper;
 
 import xyz.sumtplus.domain.AuthVO;
 import xyz.sumtplus.domain.MemberVO;
-
+/**
+ * 회원매퍼 인터페이스
+ */
 public interface MemberMapper {
 	MemberVO read(String userid);
 	

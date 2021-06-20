@@ -23,14 +23,16 @@ import xyz.sumtplus.domain.Criteria;
 import xyz.sumtplus.domain.ReplyPageDTO;
 import xyz.sumtplus.domain.ReplyVO;
 import xyz.sumtplus.service.ReplyService;
-
+/**
+ * 댓글 컨트롤러
+ */
 @RestController
 @RequestMapping("/replies/")
 @Log4j
 @AllArgsConstructor
 public class ReplyController {
 	private ReplyService service;
-	
+	// 댓글등록
 	@PostMapping("new")
 	public ResponseEntity<String> create(@RequestBody ReplyVO vo) {
 		log.info(vo);
@@ -39,13 +41,13 @@ public class ReplyController {
 		return insertCount == 1 ? 
 				new ResponseEntity<>("success", HttpStatus.OK) : new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
 	}
-	
+	// 댓글 상세조회
 	@GetMapping("{rno}")
 	public ResponseEntity<ReplyVO> get(@PathVariable Long rno) {
 		log.info(rno);
 		return new ResponseEntity<ReplyVO>(service.get(rno), HttpStatus.OK);
 	}
-	
+	// 댓글 수정
 	@RequestMapping(value="{rno}", method={RequestMethod.PUT, RequestMethod.PATCH})
 	public ResponseEntity<String> modify(@PathVariable("rno") Long rno, @RequestBody ReplyVO vo) {
 		log.info(vo);
@@ -55,7 +57,7 @@ public class ReplyController {
 		return updateCount == 1 ? 
 				new ResponseEntity<>("success", HttpStatus.OK) : new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
 	}
-	
+	// 댓글 삭제
 	@DeleteMapping("{rno}/{replyer}")
 	public ResponseEntity<String> remove(@PathVariable Long rno, @PathVariable String replyer) {
 		log.info(rno);
@@ -65,7 +67,8 @@ public class ReplyController {
 				new ResponseEntity<>("success", HttpStatus.OK) : new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 	
-	// 페이지(목록)
+	// 댓글 목록조회
+	// uri에 게시글번호와 페이지번호를 부여함
 	@GetMapping("pages/{page}/{bno}")
 	public ResponseEntity<ReplyPageDTO> getList(@PathVariable int page, @PathVariable long bno) {
 		log.info("getList");
@@ -74,7 +77,8 @@ public class ReplyController {
 		return new ResponseEntity<>(service.getListPage(cri, bno), HttpStatus.OK);
 	}
 	
-	// 페이지(더보기)
+	// 댓글 목록조회(더보기)
+	// uri에 게시글번호와 댓글번호를 부여하여 댓글번호를 기준으로 더 보여줌
 	@GetMapping({"more/{bno}", "more/{bno}/{rno}"})
 	public ResponseEntity<List<ReplyVO>> getListMore(@PathVariable Long bno, @PathVariable Optional<Long> rno) {
 		log.info("getListMore");

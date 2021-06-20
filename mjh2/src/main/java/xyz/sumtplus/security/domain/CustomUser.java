@@ -15,7 +15,10 @@ import lombok.Setter;
 import lombok.ToString;
 import xyz.sumtplus.domain.AuthVO;
 import xyz.sumtplus.domain.MemberVO;
-
+/**
+ * memberVO객체를 인증과 권한 체크에 활용하기 위한 클래스
+ * memberVO객체를 userDetails 타입으로 변환
+ */
 @Getter
 @Setter
 @ToString
@@ -29,7 +32,6 @@ public class CustomUser extends User{
 	}
 	
 	public CustomUser(MemberVO vo) {
-		//super(vo.getUserid(), vo.getUserpw(), getList(vo));
 		super(vo.getUserid(), vo.getUserpw(), vo.getAuthList().stream().map(
 				a -> new SimpleGrantedAuthority(a.getAuth())).collect(Collectors.toList()));
 		
