@@ -21,132 +21,8 @@
 * TBL_MEMBER(회원) : USERID 아이디 (PK), USERPW 비밀번호, USERNAME 이름, ENABLE 활성화 
 ### 5. VO/DTO 구성
 기본적으로 테이블과 대응되는 자바의 클래스들이 있습니다. BoardVO(게시판), BoardAttachVO(첨부파일, AttachFileDTO를 상속), ReplyVO(댓글), MemberVO(회원), AuthVO(권한)   
-페이징, 검색처리를 위한 클래스가 있습니다. Criteria(기준), PageDTO, ReplyPageDTO(PageDTO를 상속)
-##### BoardVO
-```java
-package xyz.sumtplus.domain;
-
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-import lombok.Data;
-
-@Data
-public class BoardVO {
-	private Long bno; //글번호
-	private String title; //제목
-	private String content; //내용
-	private String writer; //작성자
-	private Date regdate; //작성일
-	private Date updateDate; //수정일
-	private boolean close; //비공개여부
-	private Long hitcount; //조회수
-	private Integer category; //게시판번호
-	private Long regroup; //조상글번호
-	private Long depth; //댓글깊이
-	private Long parentno; //부모글번호
-	private int replyCnt; //댓글수
-	private List<BoardAttachVO> attachList = new ArrayList<BoardAttachVO>(); //첨부파일목록
-}
-```
-##### AttachFileDTO
-```java
-package xyz.sumtplus.domain;
-
-import lombok.Data;
-/**
- * 첨부파일클래스
- */
-@Data
-public class AttachFileDTO {
-	private String fileName; //실제파일명
-	private String uploadPath; //경로
-	private String uuid; //파일명
-	private boolean image; //이미지여부
-	// 다운로드 경로를 반환하는 메서드
-	public String getDownPath() {
-		return uploadPath + "/" + uuid + "_" + fileName;
-	}
-	// 이미지 경로를 반환하는 메서드
-	public String getThumbPath() {
-		return uploadPath + "/s_" + uuid + "_" + fileName;
-	}
-}
-```
-##### BoardAttachVO
-```java  
-package xyz.sumtplus.domain;
-
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
-/**
- * TBL_ATTACH의 레코드에 대응되는 자바 클래스
- */
-@Getter
-@Setter
-@ToString(callSuper=true)
-public class BoardAttachVO extends AttachFileDTO{
-	private Long bno; //글번호
-}
-```
-##### ReplyVO
-```java  
-package xyz.sumtplus.domain;
-
-import java.util.Date;
-import lombok.Data;
-
-@Data
-public class ReplyVO {
-	private Long rno; //댓글번호
-	private Long bno; //글번호
-	
-	private String reply; //댓글내용
-	private String replyer; //작성자
-	
-	private Date replyDate; //작성일
-	private Date updateDate; //수정일
-}
-```
-##### MemberVO
-```java  
-package xyz.sumtplus.domain;
-
-import java.util.Date;
-import java.util.List;
-import lombok.Data;
-
-@Data
-public class MemberVO {
-	private String userid; //아이디
-	private String userpw; //비밀번호
-	private String userName; //이름
-	private String enabled; //활성화
-	private String email; //이메일
-	private String tel; //전화번호
-	private String birthDate; //생년월일
-	
-	private Date regDate; //등록일
-	private Date updateDate; //수정일
-	private List<AuthVO> authList; //권한의 리스트
-}
-```
-##### AuthVO
-```java  
-package xyz.sumtplus.domain;
-
-import lombok.Data;
-
-@Data
-public class AuthVO {
-	private String userid; //아이디
-	private String auth; //권한명
-}
-```
-##### Criteria
+페이징, 검색처리를 위한 클래스가 있습니다. Criteria(기준), PageDTO(페이징처리), ReplyPageDTO(댓글페이징처리, PageDTO를 상속)
+#### Criteria
 ```java  
 package xyz.sumtplus.domain;
 
@@ -217,7 +93,7 @@ public class Criteria {
 	}
 }
 ```
-##### PageDTO
+#### PageDTO
 ```java  
 package xyz.sumtplus.domain;
 
@@ -255,31 +131,238 @@ public class PageDTO {
 	}
 }
 ```
-##### ReplyPageDTO
+### 6. Controller 구성
+BoardController는 게시판을, CommonController는 회원을, ReplyController는 댓글을 Service를 통하여 처리합니다. UploadController는 첨부파일을 처리합니다.
+ReplyController는 하나의 uri가 하나의 고유한 리소스를 대표하는 Rest방식을 사용하였습니다.
+#### BoardController
+스프링 시큐리티의 어노테이션을 이용하여 게시글 등록은 로그인한 사용자만 접근, 게시글 수정/삭제는 작성자만 접근가능합니다. 첨부파일과 관련된 메서드가 있습니다.
 ```java  
-package xyz.sumtplus.domain;
+package xyz.sumtplus.controller;
+
+import java.io.File;
+import java.security.Provider.Service;
+import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import lombok.extern.log4j.Log4j;
+import xyz.sumtplus.domain.BoardAttachVO;
+import xyz.sumtplus.domain.BoardVO;
+import xyz.sumtplus.domain.Criteria;
+import xyz.sumtplus.domain.PageDTO;
+import xyz.sumtplus.service.BoardService;
+/**
+ *	게시판을 처리하는 컨트롤러 
+ */
+@Controller
+@Log4j
+@RequestMapping("/board/*")
+public class BoardController {
+	@Autowired
+	private BoardService service;
+	// crieria를 파라미터로 받아서 게시글 목록과 페이징을 모델에 부여
+	// list페이지 요청
+	@GetMapping("list")
+	public void list(Criteria cri, Model model) {
+		log.info("list....");
+		model.addAttribute("list",service.getList2(cri));
+		model.addAttribute("pageMaker", new PageDTO(cri, service.getTotal(cri)));
+	}
+	// criteria를 파라미터로 받아서 강의조회게시글 목록과 페이징을 모델에 부여
+	// criteria의 카테고리는 2로 데이터수는 8로 고정하여 courseList페이지 요청
+	@GetMapping("courseList")
+	public void courseList(Criteria cri, Model model) {
+		log.info("courseList......");
+		cri.setCategory(2);
+		cri.setAmount(8);
+		model.addAttribute("list",service.getList3(cri));
+		model.addAttribute("pageMaker", new PageDTO(cri, service.getTotal(cri)));
+	}
+	
+	// bno와 criteria를 파라미터로 받아서 bno에 해당하는 게시글과 criteria를 모델에 부여
+	// get또는 modify페이지 요청
+	@GetMapping({"get","modify"})
+	public void get(@RequestParam Long bno, @ModelAttribute("cri") Criteria cri, Model model) {
+		log.info("get or modify....");
+		model.addAttribute("board",service.get(bno));
+		model.addAttribute("cri",cri);
+	}
+	// bno(기본값 0)를 파라미터로 받아서 조건에 맞게 모델에 부여
+	// register페이지 요청
+	@PreAuthorize("isAuthenticated()")
+	@GetMapping("register")
+	public void register(@RequestParam(defaultValue="0") Long bno, Model model) {
+		// bno가 0일때 게시글등록, bno에 해당하는 boardVO객체를 모델에 부여
+		if(bno == 0) {
+			log.info("register.......");
+			log.info("boardVO : " + service.get(bno));
+		}
+		// bno가 0이 아닐때 답글등록, bno에 해당하는 boardVO객체와 regroup을 모델에 부여
+		else {
+			log.info("answer....");
+			log.info("regroup : " + service.get(bno).getRegroup());
+			model.addAttribute("board", service.get(bno));
+		}
+	}
+	// register에서 post로 데이터를 받았을때 처리
+	// boardVO를 파라미터로 받아서 게시글 등록
+	@PreAuthorize("isAuthenticated()")
+	@PostMapping("register")
+	public String register(BoardVO boardVO, RedirectAttributes rttr) {
+		log.info("register....");
+		log.info(boardVO);
+		service.registerChild(boardVO);
+		// 1회성사용, 새로 등록한 게시글 번호를 전달
+		rttr.addFlashAttribute("result", boardVO.getBno());
+		// list로 리다이렉트
+		return "redirect:/board/list";
+	}
+	// modify에서 post로 데이터를 받았을때 처리
+	// boardVO와 criteria를 파라미터로 받아서 게시글 수정
+	@PreAuthorize("principal.username == #boardVO.writer")
+	@PostMapping("modify")
+	public String modify(BoardVO boardVO, @ModelAttribute("cri") Criteria cri, RedirectAttributes rttr) {
+		log.info("modify....");
+		log.info(boardVO);
+		boardVO.getAttachList().forEach(log::info);
+		// 수정 성공시 success를 반환
+		if(service.modify(boardVO)) {
+			rttr.addFlashAttribute("result", "success");
+		};
+		// 페이징된 list로 리다이렉트
+		return "redirect:/board/list" + cri.getListLink();
+	}
+	// remove에서 post로 데이터를 받았을때 처리
+	// bno와 writer와 criteria를 파라미터로 받아서 게시글 삭제
+	@PreAuthorize("principal.username == #writer")
+	@PostMapping("remove")
+	public String remove(String writer, @RequestParam Long bno, @ModelAttribute("cri") Criteria cri, RedirectAttributes rttr) { 
+		log.info("remove....");
+		// bno로 첨부파일의 목록을 가져옴
+		List<BoardAttachVO> list = service.getAttachList(bno);
+		// 삭제 성공시 첨부파일을 제거, success을 반환
+		if(service.remove(bno)) {
+			deleteFiles(list);
+			rttr.addFlashAttribute("result", "success");
+		};
+		// 페이징된 list로 리다이렉트
+		return "redirect:/board/list" + cri.getListLink();
+	}
+	// bno를 파라미터로 받아서 첨부파일의 목록을 반환
+	@ResponseBody
+	@GetMapping("getAttachList")
+	public List<BoardAttachVO> getAttachList(Long bno) {
+		log.info("getAttachList... " + bno);
+		return service.getAttachList(bno);		
+	}
+	// 첨부파일을 삭제하는 메서드
+	private void deleteFiles(List<BoardAttachVO> attachList) {
+		log.info("deleteFiles............");
+		log.info(attachList);
+		// 이미지일 경우 썸네일도 같이 삭제
+		attachList.forEach(attach-> {
+			new File(UploadController.UPLOAD_PATH, attach.getDownPath()).delete();
+			if(attach.isImage()) {
+				new File(UploadController.UPLOAD_PATH, attach.getThumbPath()).delete();
+			}
+		});
+	}
+}
+```
+#### ReplyController
+등록은 post, 조회는 get, 삭제는 delete, 수정은 put또는 patch방식을 사용하였습니다. 조회/수정/삭제는 uri에 댓글의 pk를 부여했습니다.
+```java  
+package xyz.sumtplus.controller;
 
 import java.util.List;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import java.util.Optional;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
+import lombok.AllArgsConstructor;
+import lombok.extern.log4j.Log4j;
+import xyz.sumtplus.domain.Criteria;
+import xyz.sumtplus.domain.ReplyPageDTO;
+import xyz.sumtplus.domain.ReplyVO;
+import xyz.sumtplus.service.ReplyService;
 /**
- *	댓글 페이징처리를 위한 클래스
+ * 댓글 컨트롤러
  */
-@Getter
-@Setter
-@ToString
-public class ReplyPageDTO extends PageDTO{
-	private List<ReplyVO> list;
-	
-	public ReplyPageDTO(Criteria cri, int total) {
-		super(cri, total);
+@RestController
+@RequestMapping("/replies/")
+@Log4j
+@AllArgsConstructor
+public class ReplyController {
+	private ReplyService service;
+	// 댓글등록
+	@PostMapping("new")
+	public ResponseEntity<String> create(@RequestBody ReplyVO vo) {
+		log.info(vo);
+		int insertCount = service.register(vo);
+		log.info("insertCount :: " + insertCount);
+		return insertCount == 1 ? 
+				new ResponseEntity<>("success", HttpStatus.OK) : new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+	}
+	// 댓글 상세조회
+	@GetMapping("{rno}")
+	public ResponseEntity<ReplyVO> get(@PathVariable Long rno) {
+		log.info(rno);
+		return new ResponseEntity<ReplyVO>(service.get(rno), HttpStatus.OK);
+	}
+	// 댓글 수정
+	@RequestMapping(value="{rno}", method={RequestMethod.PUT, RequestMethod.PATCH})
+	public ResponseEntity<String> modify(@PathVariable("rno") Long rno, @RequestBody ReplyVO vo) {
+		log.info(vo);
+		vo.setRno(rno);
+		int updateCount = service.modify(vo);
+		log.info("insertCount :: " + updateCount);
+		return updateCount == 1 ? 
+				new ResponseEntity<>("success", HttpStatus.OK) : new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+	}
+	// 댓글 삭제
+	@DeleteMapping("{rno}/{replyer}")
+	public ResponseEntity<String> remove(@PathVariable Long rno, @PathVariable String replyer) {
+		log.info(rno);
+		int removeCount = service.remove(rno);
+		log.info("insertCount :: " + removeCount);
+		return removeCount == 1 ? 
+				new ResponseEntity<>("success", HttpStatus.OK) : new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 	
-	public ReplyPageDTO(Criteria cri, int total, List<ReplyVO> list) {
-		super(cri, total);
-		this.list = list;
+	// 댓글 목록조회
+	// uri에 게시글번호와 페이지번호를 부여함
+	@GetMapping("pages/{page}/{bno}")
+	public ResponseEntity<ReplyPageDTO> getList(@PathVariable int page, @PathVariable long bno) {
+		log.info("getList");
+		Criteria cri = new Criteria(page, 10);
+		log.info(cri);
+		return new ResponseEntity<>(service.getListPage(cri, bno), HttpStatus.OK);
 	}
 	
+	// 댓글 목록조회(더보기)
+	// uri에 게시글번호와 댓글번호를 부여하여 댓글번호를 기준으로 더 보여줌
+	@GetMapping({"more/{bno}", "more/{bno}/{rno}"})
+	public ResponseEntity<List<ReplyVO>> getListMore(@PathVariable Long bno, @PathVariable Optional<Long> rno) {
+		log.info("getListMore");
+		return new ResponseEntity<>(service.getListMore(rno.isPresent() ? rno.get() : null, bno), HttpStatus.OK);
+	}
 }
 ```
