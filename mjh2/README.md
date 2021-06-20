@@ -5,7 +5,7 @@
 * 회원 : 스프링 시큐리티를 이용하여 로그인 처리. 회원가입, 회원정보수정, 탈퇴추가
 * 강의정보 : 게시판 카테고리를 나누어 취업에 관련된 다양한 강좌들을 사진과 함께 소개
 * 커뮤니티 : 기본적인 CRUD가 가능한 게시판이며, ajax를 이용한 댓글 비동기 처리, 오라클 계층형쿼리를 이용한 답글 기능 추가
-* 첨부파일 : MultiPart를 이용하여 파일업로드/다운로드 처리, 이미지는 썸네일 표시
+* 첨부파일 : MultiPart를 이용하여 파일업로드/다운로드 처리, 이미지는 썸네일 표시, 쿼츠라이브러리를 이용해 잘못업로드한 파일관리
 ### 3. 사용프로그램
 * 사용언어 : JAVA, HTML, CSS, JAVASCRIPT, SQL
 * 사용도구 : eclipse, spring framework, JDK 1.8
@@ -366,3 +366,131 @@ public class ReplyController {
 	}
 }
 ```
+### 7.JavaScript 
+비동기 댓글처리를 위하여 reply.js에 자바스크립트를 모듈화 했고 ajax를 사용합니다. 파일업로드시에도 ajax를 통해서 서버에 첨부파일을 전송합니다.
+#### reply.js
+즉시 실행함수와 {}를 이용해서 객체를 구성했습니다. 함수내부에서 필요한 메서드를 구성해서 객체를 구성했습니다. 외부에서는 replyService.메서드(객체, 콜백)을 전달하는 형태로 호출할 수 있습니다.
+```java  
+/**
+ *  자바스크립트 댓글 모듈
+ */
+console.log("reply module...");
+
+var replyService = (function() {
+	return {
+		//ajax 댓글등록
+		add: function(reply, callback, error) {
+			console.log("reply.add()........");
+			$.ajax({
+				type : "post",
+				url : reply.cp+"/replies/new",
+				data : JSON.stringify(reply), 
+				contentType : "application/json; charset=utf-8",
+				success : function(result, status, xhr) {
+					if(callback) {
+						callback(result);
+					}
+				},
+				error : function(xhr, status, er) {
+					if(error) {
+						error(er);
+					}
+				}
+			});
+		},
+		//ajax 댓글목록조회
+		getList: function(param, callback, error) {
+			var bno = param.bno;
+			var rnoStr = param.rno ? + param.rno : "";
+			var url = param.cp+"/replies/more/" + bno + "/" + rnoStr;
+			console.log(url);
+			
+			$.getJSON(url, function(result) { //success
+				if(callback) {
+					callback(result);
+				}
+			}).fail(function(xhr, status, er) { // error
+				if(error) {
+					error(er);
+				}
+			});
+		},
+		// ajax 댓글 삭제
+		remove: function(reply, callback, error) {
+			var url = reply.cp+"/replies/" + reply.rno + "/" + reply.replyer;
+			$.ajax({
+				type : "delete",
+				url : url,
+				success : function(result) {
+					if(callback) {
+						callback(result);
+					}
+				},
+				error : function(xhr, status, er) {
+					if(error) {
+						error(er);
+					}
+				}
+			})
+		},
+		//ajax 댓글 수정
+		update: function(reply, callback, error) {
+			var url = reply.cp+"/replies/" + reply.rno;
+			$.ajax({
+				type : "put",
+				url : url,
+				data : JSON.stringify(reply), 
+				contentType : "application/json; charset=utf-8",
+				success : function(result, status, xhr) {
+					if(callback) {
+						callback(result);
+					}
+				},
+				error : function(xhr, status, er) {
+					if(error) {
+						error(er);
+					}
+				}
+			});
+		},
+		//ajax 댓글 상세조회
+		get: function(reply, callback, error) {
+			var rno = reply.rno;
+			var url = reply.cp+"/replies/" + rno;
+			$.getJSON(url, function(result) { //success
+				if(callback) {
+					callback(result);
+				}
+			}).fail(function(xhr, status, er) { // error
+				if(error) {
+					error(er);
+				}
+			});
+		},
+		// 지난시간
+		displayTime: function(timeValue) {
+			return moment(timeValue).fromNow();
+		},
+		getReplyDOM: function(param) {
+			var str="";
+			str += '<li class="comment-list" data-rno="' + list[i].rno + '">';
+			str += '<div class="single-comment justify-content-between d-flex">';
+			str += '<div class="user justify-content-between d-flex">';
+			str += '<div class="thumb">';
+			str += '<img src="${pageContext.request.contextPath}/resources/img/avatar.png" alt="" width="60px" height="60px"></div>';
+                
+			str += '	<div class="desc">';
+			str += '   	<h5>' + list[i].replyer + '</h5>';
+			str += '    	<p class="date">' + replyService.displayTime(list[i].replyDate) +'</p>';
+			str += '	<p class="comment">' + list[i].reply + '</p>';
+			str += '	</div></div></div>';
+			str += '</li>';
+		}
+	};
+})();
+```
+### 9. 스프링설정
+* web.xml : 파일첨부를 위한 multipart-config의 특정 사이즈의 메모리 사용, 파일의 최대크기, 한번에 올릴 수 있는 최대 크기지정을 했습니다. 인코딩을 위한 필더를 넣었습니다.
+* root-context.xml : 빈을 스캔하기 위한 설정과 데이터베이스 연동을 위한 설정, 배치프로그램을 사용하기 위한 설정을 넣었습니다.
+* security-context.xml : 로그인, 로그아웃, 아이디기억에 대한 설정과 패스워드워드인코더에 대한 설정을 넣었습니다.
+* servlet-context.xml : MultipartResolver와 시큐리티 어노테이션을 사용하기 위한 설정을 추가했습니다.
