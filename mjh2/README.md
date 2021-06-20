@@ -51,12 +51,14 @@ public class BoardVO {
 	private List<BoardAttachVO> attachList = new ArrayList<BoardAttachVO>(); //첨부파일목록
 }
 ```
-##### BoardAttachVO
+##### AttachFileDTO
 ```java
 package xyz.sumtplus.domain;
 
 import lombok.Data;
-
+/**
+ * 첨부파일클래스
+ */
 @Data
 public class AttachFileDTO {
 	private String fileName; //실제파일명
@@ -71,5 +73,213 @@ public class AttachFileDTO {
 	public String getThumbPath() {
 		return uploadPath + "/s_" + uuid + "_" + fileName;
 	}
+}
+```
+##### BoardAttachVO
+```java  
+package xyz.sumtplus.domain;
+
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+/**
+ * TBL_ATTACH의 레코드에 대응되는 자바 클래스
+ */
+@Getter
+@Setter
+@ToString(callSuper=true)
+public class BoardAttachVO extends AttachFileDTO{
+	private Long bno; //글번호
+}
+```
+##### ReplyVO
+```java  
+package xyz.sumtplus.domain;
+
+import java.util.Date;
+import lombok.Data;
+
+@Data
+public class ReplyVO {
+	private Long rno; //댓글번호
+	private Long bno; //글번호
+	
+	private String reply; //댓글내용
+	private String replyer; //작성자
+	
+	private Date replyDate; //작성일
+	private Date updateDate; //수정일
+}
+```
+##### MemberVO
+```java  
+package xyz.sumtplus.domain;
+
+import java.util.Date;
+import java.util.List;
+import lombok.Data;
+
+@Data
+public class MemberVO {
+	private String userid; //아이디
+	private String userpw; //비밀번호
+	private String userName; //이름
+	private String enabled; //활성화
+	private String email; //이메일
+	private String tel; //전화번호
+	private String birthDate; //생년월일
+	
+	private Date regDate; //등록일
+	private Date updateDate; //수정일
+	private List<AuthVO> authList; //권한의 리스트
+}
+```
+##### AuthVO
+```java  
+package xyz.sumtplus.domain;
+
+import lombok.Data;
+
+@Data
+public class AuthVO {
+	private String userid; //아이디
+	private String auth; //권한명
+}
+```
+##### Criteria
+```java  
+package xyz.sumtplus.domain;
+
+import org.springframework.web.util.UriComponentsBuilder;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
+/**
+ * 페이징처리와 게시판카테고리 분류, 검색을 처리하기 위한 클래스
+ */
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class Criteria {
+	private Integer pageNum = 1; //페이지번호
+	private Integer amount = 10; //한 페이지당 데이터수
+	private Integer category = 1; //게시판번호
+	
+	private String type; //검색조건
+	private String keyword; //키워드
+	
+	public Criteria(Integer pageNum, Integer amount) {
+		super();
+		this.pageNum = pageNum;
+		this.amount = amount;
+	}
+	
+	public Criteria(Integer pageNum, Integer amount, Integer category) {
+		super();
+		this.pageNum = pageNum;
+		this.amount = amount;
+		this.category = category;
+	}
+	
+	// 검색조건을 배열로 변환하는 메서드
+	public String[] getTypeArr() {
+		return type == null ? new String[]{} : type.split("");
+		// ex) "ABCD".split("") -> {"A","B","C","D"}
+	}
+	
+	/**
+	 *	uri를 생성하기 위한 메서드 
+	 */
+	public String getListLink() {
+		UriComponentsBuilder builder = UriComponentsBuilder.fromPath("")
+				.queryParam("pageNum", pageNum)
+				.queryParam("amount", amount)
+				.queryParam("type", type)
+				.queryParam("keyword", keyword);
+		return builder.toUriString();
+	}
+	
+	public String getListLink2() {
+		UriComponentsBuilder builder = UriComponentsBuilder.fromPath("")
+				.queryParam("amount", amount)
+				.queryParam("type", type)
+				.queryParam("keyword", keyword);
+		return builder.toUriString();
+	}
+	
+	public String getListLink3() {
+		UriComponentsBuilder builder = UriComponentsBuilder.fromPath("")
+				.queryParam("pageNum", pageNum)
+				.queryParam("type", type)
+				.queryParam("keyword", keyword);
+		return builder.toUriString();
+	}
+}
+```
+##### PageDTO
+```java  
+package xyz.sumtplus.domain;
+
+import lombok.Data;
+/**
+ * 페이징 처리를 위한 클래스 
+ */
+@Data
+public class PageDTO {
+	private int startPage; //시작페이지
+	private int endPage; //끝페이지
+	private int realEnd; //진짜 끝페이지
+	private boolean prev; //이전
+	private boolean next; //다음
+	
+	private int total; //전체 데이터 수
+	private Criteria cri;
+	
+	// 생성자
+	public PageDTO(Criteria cri, int total) {
+		this.cri = cri;
+		this.total = total;
+		// 페이지번호로 끝페이지와 시작페이지 계산
+		// ex) pageNum = 13이면 endPage = 20, startPage = 11 
+		endPage = (cri.getPageNum() + 9) / 10 * 10;
+		startPage = endPage - 9;
+		// 전체데이터수로 realEnd 계산
+		realEnd = (total + 9) / 10;
+		// 끝페이지가 realEnd보다 크면 realEnd 반환
+		endPage = realEnd < endPage ? realEnd : endPage;
+		// 이전은 시작번호가 1보다 큰 경우에 존재
+		prev = startPage > 1;
+		// 다음은 realEnd가 끝번호보다 큰 경우에만 존재
+		next = endPage < realEnd;
+	}
+}
+```
+##### ReplyPageDTO
+```java  
+package xyz.sumtplus.domain;
+
+import java.util.List;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+/**
+ *	댓글 페이징처리를 위한 클래스
+ */
+@Getter
+@Setter
+@ToString
+public class ReplyPageDTO extends PageDTO{
+	private List<ReplyVO> list;
+	
+	public ReplyPageDTO(Criteria cri, int total) {
+		super(cri, total);
+	}
+	
+	public ReplyPageDTO(Criteria cri, int total, List<ReplyVO> list) {
+		super(cri, total);
+		this.list = list;
+	}
+	
 }
 ```
